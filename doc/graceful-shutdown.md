@@ -11,12 +11,37 @@
 
 + Spring Boot 2.3.0 之后自带的优雅关闭方案
 
-+ 拓展：一些中间件的优雅关闭方案
++ 拓展：一些中间件的优雅关闭方案（中间件都有自己的优雅关闭处理）
 + 拓展：K8S 服务更新是如何触发关闭pod的
 
 
 
 ##  Java关闭钩子 ShutdownHook
+
+详细参考：https://docs.oracle.com/javase/8/docs/api/java/lang/Runtime.html
+
+关闭钩子只是一个初始化但未启动的线程。当虚拟机开始其关机序列时，它将以某种未指定的顺序启动所有注册的关机钩子，并让它们并发运行。当所有的钩子都执行完时，进程就会停止。注意，守护线程将在关闭序列期间继续运行，如果通过调用exit方法启动shutdown，则非守护线程也将继续运行。
+
+ShutdownHook 需要尽快执行结束（不要在 ShutdownHook 执行可能被阻塞代码，如 I/0 读写）。
+
+JVM虚拟机在发生下面事件后执行关闭钩子并退出：
+
++ 程序正常退出（最后一个非守护线程退出）
++ 调用System.exit()
++ 终端使用Ctrl+C触发的中断（SIGINT）
++ 用户注销，系统关闭
++ 使用Kill pid命令关闭进程（kill -9 不会触发关闭钩子执行而是立即关闭进程）
+
+相关接口：
+
+```java
+//注册关闭钩子
+public void addShutdownHook(Thread hook)
+//注销关闭钩子
+public boolean removeShutdownHook(Thread hook)
+//强制终止当前运行的 Java 虚拟机。此方法永远不会正常返回。
+public void halt(int status)
+```
 
 
 
@@ -90,11 +115,21 @@ kill -l 	#显示所有信号（这里是之母l,不是数字1）, Linux mint 只
 
 ### 对Linux kill 信号的处理是怎么调用到Java关闭钩子的
 
+> Linux上，猜测 JVM （JVM就是一个Linux进程）中也是通过 signal() 注册关闭钩子的，信号产生后回调执行关闭钩子的逻辑。
+
+在钩子方法中加断点，可以看到有两个关键线程：`DestroyJavaVM` 和 `Signal Dispatcher` , 然后可以查JDK和JVM相关源码。
+
+但是JVM源码相当复杂。但是间接找到了篇文章（[Revelations on Java signal handling and termination](https://web.archive.org/web/20090214230330/http://ibm.com:80/developerworks/java/library/i-signalhandling)）简述了当操作系统向 JVM 发出信号时信号分发器线程（Signal Dispatcher）如何将信号传递给适当的处理程序（关闭钩子）执行的。不过是基于JVM1.3的。
+
+参考文章中”How the JVM processes signals“这部分。
+
+还有一篇文章：[关于 Signal Dispatcher](https://blog.csdn.net/u011039332/article/details/105930146)。
+
 
 
 ## 各Web框架优雅关闭方案
 
-Web框架优雅停机需要做到：
+**Web框架优雅停机需要做到**：
 
 + 不允许新的请求进入，或直接响应503等
 + 预留一点时间使容器内部业务线程执行完毕
@@ -147,11 +182,7 @@ spring:
     timeout-per-shutdown-phase: 20s #设置关闭缓冲时间默认30s，超时无论线程任务是否执行完毕都会立即停机处理
 ```
 
-
-
 ### 源码实现原理
-
-
 
 
 
@@ -170,5 +201,7 @@ spring:
 + https://docs.spring.io/spring-boot/docs/2.6.14/reference/html/web.html#web.graceful-shutdown
 
 + [A Study of Graceful Shutdown for Spring Boot Applications](https://www.springcloud.io/post/2022-02/spring-boot-graceful-shutdown/#gsc.tab=0)
+
 + 《Unix环境高级编程》
-+ 
+
+  

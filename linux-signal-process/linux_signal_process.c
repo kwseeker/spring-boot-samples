@@ -11,11 +11,20 @@ static void sig_term_handle(int sig) {
     }
 }
 
+static void sig_int_handle(int sig) {
+    printf("received signal %d\n", sig);
+    if (sig == SIGTERM) {
+        printf("process been interrupted %d\n", sig);
+        exit(2);
+    }
+}
+
 /**
  * 先查当前进程的pid, 然后 kill <pid>
  */
 int main() {
-    if (signal(SIGTERM, sig_term_handle) == SIG_ERR) {
+    if (signal(SIGTERM, sig_term_handle) == SIG_ERR ||
+        signal(SIGINT, sig_int_handle) == SIG_ERR) {
         printf("signal error\n");
         exit(-1);
     }
