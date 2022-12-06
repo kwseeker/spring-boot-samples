@@ -140,13 +140,39 @@ kill -l 	#显示所有信号（这里是之母l,不是数字1）, Linux mint 只
 
 ### 回顾Spring Bean生命周期
 
+1. Bean实例化
 
+2. 属性填充
+
+3. 如果Bean实现了BeanNameAware接口，调用 setBeanName()方法;
+
+4. 如果Bean实现了BeanClassLoaderAware接口，调用setBeanClassLoader()方法;
+
+5. 如果Bean实现了BeanFactoryAware接口，调用setBeanFactory()方法；
+
+6. 调用BeanPostProcessor的postProcessBeforeInitialization()方法；
+
+7. 如果Bean实现了InitializingBean接口，调用afterPropertiesSet()方法；
+
+8. 如果Bean定义了init-method方法，则调用Bean的init-method()方法；
+
+   xml 中 init-method 或 @Bean 注解 initMethod 指定。
+
+9. 调用BeanPostProcessor的postProcessAfterInitialization方法；
+
+  当进行到这一步，Bean已经被准备就绪了，一直停留在应用的上下文中，直到被销毁；
+
+10. 如果应用的上下文被销毁了，如果Bean实现了DisposableBean接口，则调用destroy方法，
+
+    如果Bean定义了destory-method声明了销毁方法也会被调用。
 
 ### Spring Bean 生命周期末端 - 销毁机制
 
 + DisposableBean接口 
 + @PreDestroy注解
 + destory-method 方法
+
++ LifeCycle接口stop()方法
 
 
 
