@@ -4,10 +4,10 @@
 
 + Java 关闭钩子
 + 进程、线程退出控制原理 & Linux kill 信号机制
-+ 各Web框架优雅关闭方案（如：Netty、Tomcat等）
 + Spring Bean生命周期
 + Spring Boot Async 线程池优雅关闭原理
 + Spring Boot 2.3.0 之前的 Actuator
++ 各Web框架优雅关闭方案（如：Netty、Tomcat等）
 
 + Spring Boot 2.3.0 之后自带的优雅关闭方案
 
@@ -127,15 +127,6 @@ kill -l 	#显示所有信号（这里是之母l,不是数字1）, Linux mint 只
 
 
 
-## 各Web框架优雅关闭方案
-
-**Web框架优雅停机需要做到**：
-
-+ 不允许新的请求进入，或直接响应503等
-+ 预留一点时间使容器内部业务线程执行完毕
-
-
-
 ## Spring Bean 生命周期 之 销毁
 
 ### 回顾Spring Bean生命周期
@@ -162,23 +153,93 @@ kill -l 	#显示所有信号（这里是之母l,不是数字1）, Linux mint 只
 
   当进行到这一步，Bean已经被准备就绪了，一直停留在应用的上下文中，直到被销毁；
 
-10. 如果应用的上下文被销毁了，如果Bean实现了DisposableBean接口，则调用destroy方法，
+10. 如果应用的上下文被销毁了，遍历Bean容器的 disposableBeans（存的都是DisposableBeanAdapter实例），调用DisposableBeanAdapter 的 destroy方法。实现 DisposableBean接口、指定了@Bean destoryMethod / XML bean destory-method、方法有注解@PreDestory 的 Bean 都会封装成 DisposableBeanAdapter，存储到 disposableBeans。
 
-    如果Bean定义了destory-method声明了销毁方法也会被调用。
+### Spring Bean 生命周期末端 - 销毁
 
-### Spring Bean 生命周期末端 - 销毁机制
+**流程图**：
 
-+ DisposableBean接口 
-+ @PreDestroy注解
-+ destory-method 方法
+![](graph/Spring上下文关闭流程.png)
 
-+ LifeCycle接口stop()方法
+**如果想自定义Bean销毁操作，可以通过下面方式实现：**
+
++ **Lifecycle接口stop()**
++ **DisposableBean接口**（官方不推荐使用，会和Spring框架耦合）
++ **@PreDestroy注解**
++ **@Bean destoryMethod / XML bean destory-method 属性** 
+
++ **DestructionAwareBeanPostProcessor** 
+
+  继承了BeanPostProcessor（定义了初始化前、初始化后的操作）；
+
+  postProcessBeforeDestruction(Object bean, String beanName)方法定义**销毁前的操作**，requiresDestruction(Object bean)方法定义对哪些bean才会执行销毁操作。
+
+**DEMO参考**：
+
+spring-analysis:spring-module/spring-ioc/src/test/java/top/kwseeker/spring/ioc/close
+
+可以通过日志感受下过程：
+
+```verilog
+//实例化、属性填充
+InnerBean created
+call OuterBean()...
+call OuterBean BeanNameAware setBeanName()...
+call OuterBean BeanClassLoaderAware setBeanClassLoader()...
+call OuterBean BeanFactoryAware setBeanFactory()...
+
+//初始化
+call OuterBeanPostProcessor postProcessBeforeInitialization()...
+call OuterBean InitializingBean afterPropertiesSet()...
+call OuterBean init()...
+call OuterBeanPostProcessor postProcessAfterInitialization()...
+call DBean init()...
+call EBean init()...
+
+call SmartLifecycleCBean isRunning()...
+call SmartLifecycleCBean start()...       即在所有其他bean都初始化完成后才执行Lifecycle Bean 的 start() 方法
+call SmartLifecycleCBean isRunning()...
+call LifeCycleABean isRunning()...
+call LifeCycleABean start()...
+call LifeCycleBBean isRunning()...
+call LifeCycleBBean start()...
+
+//使用
+
+//销毁
+ContextClosedEvent occurred: 1670497881274
+
+call LifeCycleBBean isRunning()...
+call LifeCycleBBean stop()...
+call LifeCycleABean isRunning()...
+call LifeCycleABean stop()...
+call SmartLifecycleCBean isRunning()...
+call SmartLifecycleCBean stop(callback)...
+
+call EBean destroyMethod()...
+call DBean destroyMethod()...
+call OuterBean preDestroy()...
+call OuterBean DisposableBean destroy()...
+call OuterBean destroyMethod()...
+
+call MyDestructionAwareBeanPostProcessor postProcessBeforeDestruction()...
+call FBean destruct() ...
+```
 
 
 
 ## Spring Boot Async 线程池优雅关闭原理
 
 + /actuator/shutdown 请求
+
+
+
+## 各Web框架优雅关闭方案
+
+**Web框架优雅停机需要做到**：
+
++ 不允许新的请求进入，或直接响应503等
++ 预留一点时间使容器内部业务线程执行完毕
 
 
 
@@ -209,8 +270,6 @@ spring:
 ```
 
 ### 源码实现原理
-
-
 
 
 
