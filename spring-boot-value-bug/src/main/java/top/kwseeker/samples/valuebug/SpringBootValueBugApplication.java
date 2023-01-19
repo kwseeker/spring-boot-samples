@@ -14,7 +14,7 @@ public class SpringBootValueBugApplication implements ApplicationContextAware {
     public static void main(String[] args) {
         SpringApplication.run(SpringBootValueBugApplication.class, args);
         SomeBean bean = context.getBean(SomeBean.class);
-        System.out.println("rateLimiter.on: " + bean.getOn());
+        System.out.println("SomeBean bean: " + bean.toString());
     }
 
     @Override
