@@ -3,5 +3,7 @@ spring:
     name: ValueAnnoDemo
 
 rateLimiter:
-  on: true
-#rateLimiter: true
+  'on': true  #on会被snakeyaml转成true, 需要加上引号"转义"
+#  "on": true  #双引号也可以
+#  switch: true
+#rateLimiter: trues
