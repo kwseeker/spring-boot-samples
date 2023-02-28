@@ -11,13 +11,25 @@
   <groupId>top.kwseeker.boot</groupId>
   <artifactId>transaction</artifactId>
   <version>0.0.1-SNAPSHOT</version>
-  <name>transaction</name>
+  <name>spring-boot-transaction</name>
   <description>Demo project for Spring Boot</description>
   <properties>
     <java.version>8</java.version>
   </properties>
 
   <dependencies>
+    <!-- 这里暂时只引入mysql jdbc 驱动，后面想看更复杂的 mybatis->druid->jdbc 的流程到时候再拓展 -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <!-- 这个包有依赖 spring-jdbc -> spring-tx -->
+      <artifactId>spring-boot-starter-jdbc</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>mysql</groupId>
+      <artifactId>mysql-connector-java</artifactId>
+      <version>8.0.29</version>
+    </dependency>
+
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter</artifactId>

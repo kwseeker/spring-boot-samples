@@ -16,4 +16,12 @@ package top.kwseeker.boot.transaction;
 * 1）使用编程式事务，每个线程一个事务，所有线程监听一个共享的状态，所有线程预执行成功则设置状态为true, 状态为true才提交，否则所有事务全部回滚。
 *   这个网上案例很多。
 * 2）其实我想是不是也可以共享事务对象呢？不过就算可以，两个线程使用一个连接，好像就变成串行了，多线程就没有意义了。
+*
+* 官方资料：
+* 事务管理：
+* https://docs.spring.io/spring-framework/docs/current/reference/html/data-access.html#transaction
+* JDBC数据访问：
+* https://docs.spring.io/spring-framework/docs/current/reference/html/data-access.html#jdbc
+* 数据源配置：
+* https://docs.spring.io/spring-boot/docs/2.6.14/reference/html/data.html#data.sql.datasource.configuration
 * */
