@@ -6,7 +6,11 @@
 
   <groupId>top.kwseeker</groupId>
   <artifactId>spring-boot-samples</artifactId>
+  <packaging>pom</packaging>
   <version>1.0-SNAPSHOT</version>
+  <modules>
+    <module>spring-boot-anti-reptile</module>
+  </modules>
 
   <name>spring-boot-samples</name>
 
